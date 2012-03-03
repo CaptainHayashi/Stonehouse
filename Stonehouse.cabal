@@ -1,0 +1,33 @@
+Name: Stonehouse
+Version: 1.0
+Cabal-Version: >=1.2
+License: BSD3
+License-file: COPYING
+Author: Matt Windsor
+Maintainer: matt.windsor@ury.york.ac.uk
+Bug-Reports: mailto:computing@ury.york.ac.uk
+Stability: Experimental
+Synopsis: Object generator set for Rapier
+Description:
+  Stonehouse is a code generator set for the Rapier data retrieval
+  system created by URY, generating code representing Rapier objects.
+Category: Code Generation
+Build-Type: Simple
+
+Library
+  Ghc-Options: -Wall
+  Build-Depends: base >= 4.0 && < 5
+  Exposed-Modules: Rapier.Obgen.Php.Generate,
+                   Rapier.Obgen.Php.Compile,
+                   Rapier.Obgen.Object,
+                   Rapier.Obgen.Utils
+
+Executable phpgenerate
+  Main-Is: Main.lhs
+  Hs-Source-Dirs: phpgenerate, .
+  Ghc-Options: -Wall
+
+Executable phpcompile
+  Main-Is: Main.lhs
+  Hs-Source-Dirs: phpcompile, .
+  Ghc-Options: -Wall
