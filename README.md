@@ -45,7 +45,7 @@ program-lets that implement a Unix filter/pipeline interface to said
 library.  For example, to build a PHP class file from a Haskell dump
 of a Rapier ObjectSpec:
 
-phpgenerate <dump.rob | phpcompile >dump.php
+    $ phpgenerate <dump.rob | phpcompile >dump.php
 
 The name
 --------
