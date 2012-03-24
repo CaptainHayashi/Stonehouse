@@ -55,8 +55,6 @@ that are shared between the compilation and generation phases.
 >       -- :: Identifier -> Identifier -> Identifier
 >       rapierTypeToPhp,
 >       -- :: RapierType -> PhpType
->       rapierTypeToString,
->       -- :: RapierType -> String
 >       fieldKeyFor
 >       -- :: String -> Identifier
 >     ) where
@@ -151,46 +149,22 @@ This function takes a Rapier type literal, and returns the
 corresponding PHP type literal.
 
 > rapierTypeToPhp :: RapierType -> PhpType
-> rapierTypeToPhp RpInteger       = PInteger
-> rapierTypeToPhp RpNatural       = PInteger
-> rapierTypeToPhp RpReal          = PDouble
-> rapierTypeToPhp RpDate          = PMixed
-> rapierTypeToPhp RpTime          = PInteger
-> rapierTypeToPhp RpString        = PString
-> rapierTypeToPhp RpBoolean       = PBool
-> rapierTypeToPhp ( RpVector _ )  = PArray
-> rapierTypeToPhp ( RpMap    _ )  = PArray
-> rapierTypeToPhp ( RpObject _ )  = PMixed
-> rapierTypeToPhp ( RpArray _ _ ) = PArray
-
-
-Rapier types mapping to filter method arguments
------------------------------------------------
-
-Each field in a PHP realisation of a Rapier class is sent through a
-filter function, which accepts a string realisation of a Rapier type.
-This function maps from Rapier types to those string realisations.
-
-> rapierTypeToString :: RapierType -> String
-> rapierTypeToString RpInteger       = "Integer"
-> rapierTypeToString RpNatural       = "Natural"
-> rapierTypeToString RpReal          = "Real"
-> rapierTypeToString RpDate          = "Date"
-> rapierTypeToString RpTime          = "Time"
-> rapierTypeToString RpString        = "String"
-> rapierTypeToString RpBoolean       = "Boolean"
-> rapierTypeToString ( RpObject a )  = "Object:" ++ a
-> -- Recursive types
-> rapierTypeToString ( RpVector a )  =
->     '<' : rapierTypeToString a ++ ">"
-> rapierTypeToString ( RpMap    a )  =
->     '{' : rapierTypeToString a ++ "}"
-> rapierTypeToString ( RpArray n a ) =
->     '[' : show n ++ "x" ++ rapierTypeToString a ++ "]"
+> rapierTypeToPhp RpInteger        = PInteger
+> rapierTypeToPhp RpNatural        = PInteger
+> rapierTypeToPhp RpReal           = PDouble
+> rapierTypeToPhp RpDate           = PMixed
+> rapierTypeToPhp RpTime           = PInteger
+> rapierTypeToPhp RpString         = PString
+> rapierTypeToPhp RpBoolean        = PBool
+> rapierTypeToPhp ( RpEnum   _ _ ) = PString
+> rapierTypeToPhp ( RpList   _   ) = PArray
+> rapierTypeToPhp ( RpMap    _   ) = PArray
+> rapierTypeToPhp ( RpObject _   ) = PMixed
+> rapierTypeToPhp ( RpArray  _ _ ) = PArray
 
 
 Array key constant for a given field
 ------------------------------------
 
 > fieldKeyFor :: String -> Identifier
-> fieldKeyFor = ( "self::FIELD_" ++ ) . toPhpConstName
+> fieldKeyFor = ( "FIELD_" ++ ) . toPhpConstName

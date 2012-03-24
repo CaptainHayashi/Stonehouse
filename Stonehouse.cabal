@@ -1,6 +1,6 @@
 Name: Stonehouse
 Version: 1.0
-Cabal-Version: >=1.2
+Cabal-Version: >=1.8
 License: BSD3
 License-file: COPYING
 Author: Matt Windsor
@@ -16,7 +16,7 @@ Build-Type: Simple
 
 Library
   Ghc-Options: -Wall
-  Build-Depends: base >= 4.0 && < 5
+  Build-Depends: base >= 4 && < 5
   Exposed-Modules: Rapier.Obgen.Php.Generate,
                    Rapier.Obgen.Php.Compile,
                    Rapier.Obgen.Object,
@@ -24,10 +24,22 @@ Library
 
 Executable phpgenerate
   Main-Is: Main.lhs
+  Build-Depends: base >= 4 && <5
   Hs-Source-Dirs: phpgenerate, .
   Ghc-Options: -Wall
 
 Executable phpcompile
   Main-Is: Main.lhs
+  Build-Depends: base >= 4 && <5
   Hs-Source-Dirs: phpcompile, .
   Ghc-Options: -Wall
+
+Test-suite tests
+  Type:              exitcode-stdio-1.0
+  Hs-source-dirs:    tests
+  Main-is:           Tests.lhs
+  Build-depends:     base >= 4 && < 5,
+                     Stonehouse,
+                     test-framework >= 0.6 && < 0.7,
+                     test-framework-quickcheck2 >= 0.2.9 && < 0.3,
+                     QuickCheck >= 2.4.0.1

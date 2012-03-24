@@ -87,7 +87,7 @@ the namespace, and a set of common imports.
 > makePreamble namespace classname metadata =
 >     [ CommentStatement initialComment,
 >       NamespaceStatement namespace,
->       RequireOnceStatement "helpers/object_common.php" ]
+>       RequireOnceStatement "helpers/rapier_rtypes.php" ]
 >         where
 >         initialComment =
 >             makeInitialComment namespace classname metadata

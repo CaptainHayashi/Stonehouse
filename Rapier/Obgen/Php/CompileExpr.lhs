@@ -57,6 +57,8 @@ This function takes a PHP expression as an algebraic data expression
 and compiles it into a string.
 
 > compileExpr :: PhpExpr -> String
+> compileExpr ( StaticAccess className ident ) =
+>     className ++ "::" ++ ident;
 > compileExpr ( IdExpr ident ) = ident;
 > compileExpr ( FunctionCallExpr name args ) =
 >     name ++ compileArguments args

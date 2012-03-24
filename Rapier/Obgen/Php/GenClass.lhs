@@ -56,7 +56,6 @@ into a PHP class.
 >                                 toPhpIndexName,
 >                                 toPhpAccessorName,
 >                                 rapierTypeToPhp,
->                                 rapierTypeToString,
 >                                 fieldAccess,
 >                                 fieldKeyFor
 >                               )
@@ -216,14 +215,14 @@ Part 2: FIELD_METADATA.
 
 > makeMetadataSubArray :: ObjectField -> ArrayItem
 > makeMetadataSubArray ( fname :- ftype ) =
->     IdExpr ( fieldKeyFor fname ) :=>:
+>     StaticAccess "self" ( fieldKeyFor fname ) :=>:
 >     ArrayExpr
 >       [ IdExpr "\\URY\\API\\Helpers\\RAPIER_NAME" :=>:
 >         SingleQuotedString fname,
 >         IdExpr "\\URY\\API\\Helpers\\ACCESSOR" :=>:
 >         SingleQuotedString ( toPhpAccessorName fname ),
 >         IdExpr "\\URY\\API\\Helpers\\TYPE_ID" :=>:
->         SingleQuotedString ( rapierTypeToString ftype )
+>         SingleQuotedString ( show ftype )
 >       ]
 
 ***
@@ -243,7 +242,7 @@ Part 3: SPECIAL_FIELDS.
 > makeSpecialFieldDef :: SpecialField -> ArrayItem
 > makeSpecialFieldDef ( alias :<->: fname ) =
 >     SingleQuotedString alias :=>:
->     IdExpr ( fieldKeyFor fname )
+>     StaticAccess "self" ( fieldKeyFor fname )
 
 
 
@@ -275,7 +274,7 @@ massaged version of the input otherwise.
 >                 FunctionCallExpr
 >                 "\\URY\\API\\Helpers\\filter_object_field"
 >                 [ IdExpr
->                   ( ( enquote . rapierTypeToString ) rtype ),
+>                   ( ( enquote . show ) rtype ),
 >                   IdExpr
 >                   ( '$' : toPhpParamName name )
 >                 ]
@@ -354,11 +353,11 @@ the function returning it is a thunk.
 >         )
 >     method =
 >         PhpClassMethod
->         ( StaticMethod Public ( "metadata" ) []
+>         ( StaticMethod Public "metadata" []
 >           [ Return
 >             ( New className
->               [ IdExpr "self::$FIELD_METADATA",
->                 IdExpr "self::$SPECIAL_FIELDS"
+>               [ StaticAccess "self" "$FIELD_METADATA",
+>                 StaticAccess "self" "$SPECIAL_FIELDS"
 >               ]
 >             )
 >           ]

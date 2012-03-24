@@ -76,7 +76,7 @@ accessors.
 >         items = map fieldToItem fnames
 >             where
 >             fieldToItem name =
->                 IdExpr ( fieldKeyFor name ) :=>:
+>                 StaticAccess "self" ( fieldKeyFor name ) :=>:
 >                 FunctionCallExpr
 >                 ( fieldAccess "this"
 >                   ( toPhpAccessorName name )
@@ -122,7 +122,7 @@ it!  As such, we ignore the type.)
 >         NakedExpr
 >         ( FunctionCallExpr
 >           "\\URY\\API\\Helpers\\fail_if_array_missing_key"
->           [ IdExpr "$array", IdExpr index ]
+>           [ IdExpr "$array", StaticAccess "self" index ]
 >         )
 
 ***
@@ -137,4 +137,5 @@ invocation of new knows which class to make.
 > makeFromArrayReturn cn indices = [ Return ( New cn params ) ]
 >     where
 >       params = map indexToParam indices
->       indexToParam = ArraySubscript "$array" . IdExpr
+>       indexToParam =
+>           ArraySubscript "$array" . ( StaticAccess "self" )
