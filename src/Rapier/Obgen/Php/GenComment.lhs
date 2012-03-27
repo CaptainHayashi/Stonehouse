@@ -88,7 +88,7 @@ metadata is substituted in.
 >                     "URY Computing Team"
 >                     "computing@ury.york.ac.uk"
 >                   )
->                   ( DescribedUrlLicence
+>                   ( DescribedUriLicence
 >                     "http://www.example.com"
 >                     "Unknown"
 >                   )
@@ -213,7 +213,7 @@ Given a licence term, this tiny function generates the appropriate PHP
 docstring for it.
 
 > makePhpLicence :: Licence -> DocCommentItem
-> makePhpLicence ( DescribedUrlLicence uri details ) =
+> makePhpLicence ( DescribedUriLicence uri details ) =
 >     DcLicence uri details
 
 

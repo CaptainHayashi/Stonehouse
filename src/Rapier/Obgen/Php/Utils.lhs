@@ -62,7 +62,7 @@ that are shared between the compilation and generation phases.
 > import Rapier.Obgen.ConvertName ( toCamelCase,
 >                                   toUppercaseUnderscored,
 >                                   toLowercaseConcatenated )
-> import Rapier.Obgen.Object
+> import Rapier.Types ( RapierType ( .. ) )
 
 
 Rapier field name mapping to PHP field name

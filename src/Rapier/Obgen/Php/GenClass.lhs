@@ -240,7 +240,7 @@ Part 3: SPECIAL_FIELDS.
 >         specialFieldDefs = map makeSpecialFieldDef specials
 
 > makeSpecialFieldDef :: SpecialField -> ArrayItem
-> makeSpecialFieldDef ( alias :<->: fname ) =
+> makeSpecialFieldDef ( alias, fname ) =
 >     SingleQuotedString alias :=>:
 >     StaticAccess "self" ( fieldKeyFor fname )
 

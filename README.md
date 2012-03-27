@@ -10,13 +10,12 @@ Currently implemented
 ---------------------
 
 PHP: Code generator (phpgenerate) and compiler (phpcompile).
+JSON: Specification source (jsonsource).
 
 To be implemented
 -----------------
 
 Java: Code generator (javagenerate) and compiler (javacompile).
-
-Rapier INI-based specifications (RIBS): Parser (ribsparse).
 
 What is Rapier?
 ---------------
@@ -26,13 +25,14 @@ remote data retrieval service (essentially doing similar work to an
 object-relational mapper, an object request broker, and an
 authentication system).
 
-It is (or will be, at time of writing) described in the URY R1
-document (Rapier: API for Entity Retrieval).
-
 Licencing
 ---------
 
-Stonehouse is under the 3-clause BSD licence (see COPYING).
+The main source distribution of Stonehouse (everything under src/) is
+under the 3-clause BSD licence (see COPYING).
+
+Program stubs (stubs/) and the test suite (test/) are in the public
+domain when legally possible due to their triviality.
 
 Usage
 -----
@@ -41,9 +41,9 @@ Stonehouse is a Cabal package - just use the normal Cabal-Install
 framework to build and install it.
 
 Stonehouse is mainly built up of a library, as well as small
-program-lets that implement a Unix filter/pipeline interface to said
-library.  For example, to build a PHP class file from a Haskell dump
-of a Rapier ObjectSpec:
+program-lets ("stubs") that implement a Unix filter/pipeline interface
+to said library.  For example, to build a PHP class file from a
+Haskell dump of a Rapier ObjectSpec:
 
     $ phpgenerate <dump.rob | phpcompile >dump.php
 

@@ -138,4 +138,4 @@ invocation of new knows which class to make.
 >     where
 >       params = map indexToParam indices
 >       indexToParam =
->           ArraySubscript "$array" . ( StaticAccess "self" )
+>           ArraySubscript "$array" . StaticAccess "self"

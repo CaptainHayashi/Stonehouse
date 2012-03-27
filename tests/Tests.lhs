@@ -5,19 +5,22 @@ Part of Stonehouse, the Rapier Object Code Generator
 
 This file is under the public domain.
 
-> module Main (main) where
+> module Main ( main ) where
 > import Control.Monad ( liftM,
->                        liftM2 )
+>                        liftM2
+>                      )
 > import Data.List ( elemIndices )
 > import Data.Char ( isPrint )
 > import Test.QuickCheck
 > import Test.Framework ( Test,
->                         defaultMain )
+>                         defaultMain
+>                       )
 > import Test.Framework.Providers.QuickCheck2 ( testProperty )
-> import Rapier.Obgen.Object ( RapierType ( .. ),
->                              prop_pipeInverse1,
->                              prop_pipeInverse2,
->                              prop_inverse )
+> import Rapier.Types ( RapierType ( .. ),
+>                       prop_pipeInverse1,
+>                       prop_pipeInverse2,
+>                       prop_readShowInverse
+>                     )
 
 Test boilerplate for Rapier.Obgen.Object
 
@@ -50,20 +53,21 @@ pipes aren't tested.
 >           | a !! (x - 1) /= '\\' = False
 >           | otherwise            = checkAt xs
 
-Refining of prop_inverse to make sure only printable strings not
-containing brackets are tested.  (There seem to be some problems with
-regards to strings containing control characters that cause massive
-refutations, and brackets inside parameters are banned in Rapier)
+Refining of prop_readShowInverse to make sure only printable strings
+not containing brackets are tested.  (There seem to be some problems
+with regards to strings containing control characters that cause
+massive refutations, and brackets inside parameters are banned in
+Rapier)
 
-> prop_inverse' :: RapierType -> Property
-> prop_inverse' a =
->     onlyValidStrings a ==> prop_inverse a
+> prop_readShowInverse' :: RapierType -> Property
+> prop_readShowInverse' a =
+>     onlyValidStrings a ==> prop_readShowInverse a
 >         where
->         onlyValidStrings ( RpEnum x xs ) = checkStrings ( x : xs )
->         onlyValidStrings ( RpObject x  ) = checkString x
->         onlyValidStrings ( RpList x    ) = onlyValidStrings x
->         onlyValidStrings ( RpMap  x    ) = onlyValidStrings x
->         onlyValidStrings ( RpArray _ x ) = onlyValidStrings x
+>         onlyValidStrings ( RpEnum   x xs ) = checkStrings ( x : xs )
+>         onlyValidStrings ( RpObject x    ) = checkString x
+>         onlyValidStrings ( RpList   x    ) = onlyValidStrings x
+>         onlyValidStrings ( RpMap    x    ) = onlyValidStrings x
+>         onlyValidStrings ( RpArray  _ x  ) = onlyValidStrings x
 >         onlyValidStrings _               = True
 >         checkStrings [] = True
 >         checkStrings ( x : xs )
@@ -71,16 +75,16 @@ refutations, and brackets inside parameters are banned in Rapier)
 >             | otherwise             = False
 >         checkString [] = True
 >         checkString ( x : xs )
->             | x == '{'          = False
->             | x == '}'          = False
->             | x == '['          = False
->             | x == ']'          = False
->             | x == '<'          = False
->             | x == '>'          = False
->             | x == '('          = False
->             | x == ')'          = False
->             | isPrint x == True = checkString xs
->             | otherwise         = False
+>             | x == '{'           = False
+>             | x == '}'           = False
+>             | x == '['           = False
+>             | x == ']'           = False
+>             | x == '<'           = False
+>             | x == '>'           = False
+>             | x == '('           = False
+>             | x == ')'           = False
+>             | isPrint x == False = False
+>             | otherwise          = checkString xs
 
 > main :: IO ()
 > main = defaultMain tests
@@ -88,5 +92,5 @@ refutations, and brackets inside parameters are banned in Rapier)
 > tests :: [ Test ]
 > tests = [ testProperty "rapier-type/pipeInverse1" prop_pipeInverse1,
 >           testProperty "rapier-type/pipeInverse2" prop_pipeInverse2',
->           testProperty "rapier-type/inverse" prop_inverse'
+>           testProperty "rapier-type/inverse"      prop_readShowInverse'
 >         ]

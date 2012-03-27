@@ -16,22 +16,33 @@ Build-Type: Simple
 
 Library
   Ghc-Options: -Wall
-  Build-Depends: base >= 4 && < 5
-  Exposed-Modules: Rapier.Obgen.Php.Generate,
+  Build-Depends: base >= 4 && < 5,
+                 json
+  Hs-Source-Dirs: src
+  Exposed-Modules: Rapier.Obgen.Json.Source,
+                   Rapier.Obgen.Php.Generate,
                    Rapier.Obgen.Php.Compile,
                    Rapier.Obgen.Object,
-                   Rapier.Obgen.Utils
+                   Rapier.Obgen.Utils,
+                   Rapier.Types
 
-Executable phpgenerate
+Executable rapier-jsonsource
   Main-Is: Main.lhs
-  Build-Depends: base >= 4 && <5
-  Hs-Source-Dirs: phpgenerate, .
+  Build-Depends: base >= 4 && <5,
+                 json
+  Hs-Source-Dirs: stubs/jsonsource, src
   Ghc-Options: -Wall
 
-Executable phpcompile
+Executable rapier-phpgenerate
   Main-Is: Main.lhs
   Build-Depends: base >= 4 && <5
-  Hs-Source-Dirs: phpcompile, .
+  Hs-Source-Dirs: stubs/phpgenerate, src
+  Ghc-Options: -Wall
+
+Executable rapier-phpcompile
+  Main-Is: Main.lhs
+  Build-Depends: base >= 4 && <5
+  Hs-Source-Dirs: stubs/phpcompile, src
   Ghc-Options: -Wall
 
 Test-suite tests
@@ -39,6 +50,7 @@ Test-suite tests
   Hs-source-dirs:    tests
   Main-is:           Tests.lhs
   Build-depends:     base >= 4 && < 5,
+                     json,
                      Stonehouse,
                      test-framework >= 0.6 && < 0.7,
                      test-framework-quickcheck2 >= 0.2.9 && < 0.3,

@@ -1,7 +1,7 @@
-Rapier.Obgen.Object
-===================
+Rapier.Types
+============
 
-Part of Stonehouse, the Rapier Object Code Generator
+Part of the Haskell Rapier Common Library
 
 Copyright (c) 2012, University Radio York
 All rights reserved.
@@ -37,39 +37,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Licencing mumbo-jumbo aside...
 
-This module contains the algebraic data types that constitute a Rapier
-/object specification/, which is the generic unit describing a Rapier
-object that is used to make specific implementations of the object in
-concrete languages.
+This module contains the algebraic data types for Rapier's type
+system, Read and Show instances for Rapier types, and functions for
+creating and manipulating data representing Rapier types.
 
-As this is a data-type-only module, we expose everything to other
-modules.
-
-> module Rapier.Obgen.Object where
+> module Rapier.Types ( RapierType ( .. ),
+>                       stringToType,
+>                       -- :: String -> RapierType
+>                       enumChoices,
+>                       -- :: RapierType -> Maybe [ String ]
+>                       recursiveType,
+>                       -- :: RapierType -> Maybe RapierType
+>                       prop_pipeInverse1,
+>                       -- :: String -> Bool
+>                       prop_pipeInverse2,
+>                       -- :: String -> Bool
+>                       prop_readShowInverse,
+>                       -- :: RapierType -> Bool
+>                     ) where
 > import Data.List ( intercalate,
 >                    stripPrefix,
 >                    elemIndex,
->                    elemIndices,
 >                    foldl',
 >                  )
 > import Data.Char ( isSpace )
 > import Data.Maybe ( fromMaybe )
 
-Type synonyms
--------------
 
-An identifier is a kind of string.
-
-> type RpIdentifier = String
-
-As is a Rapier class (for now, anyway; further implementations might
-generalise the Rapier class).
-
-> type RapierClass = String
-
-
-Rapier types
-------------
+Type declaration
+================
 
 Following is an enumeration of all the different Rapier types, two of
 which (the vector and the map) are recursive.
@@ -87,6 +83,51 @@ which (the vector and the map) are recursive.
 >                 | RpObject String
 >                 | RpArray Int RapierType
 >                   deriving Eq
+
+
+Making type data
+================
+
+The main way we'll expose of creating a Rapier type is to express it
+as a typestring and use the stringToType function, which is
+(currently) simply a wrapper for RapierType's (to be defined) read
+instance.
+
+> stringToType :: String -> RapierType
+> stringToType ts = read ts :: RapierType
+
+
+Convenience functions
+=====================
+
+enumChoices takes a RapierType and, if it describes an Enum, returns
+the list of choices attached to it.
+
+> enumChoices :: RapierType -> Maybe [ String ]
+> enumChoices ( RpEnum x xs ) = Just ( x : xs )
+> enumChoices _               = Nothing
+
+***
+
+recursiveType takes a RapierType and, if it is recursive, returns the
+RapierType contained within it.
+
+> recursiveType :: RapierType -> Maybe RapierType
+> recursiveType ( RpMap     a ) = Just a
+> recursiveType ( RpList    a ) = Just a
+> recursiveType ( RpArray _ a ) = Just a
+> recursiveType _               = Nothing
+
+
+Read and Show
+=============
+
+The Show and Read instances for RapierType are defined such that
+RapierTypes are always expressed as their Rapier typestrings.
+
+
+Preliminary work
+----------------
 
 We'll override Show and Read to use the Rapier typestring system in a
 bit, but first let's define a binding between scalar Rapier types and
@@ -111,7 +152,9 @@ for Read.
 >     where
 >       flipPair ( a, b ) = ( b, a )
 
-***
+
+Show
+----
 
 Now define Show.
 
@@ -186,40 +229,29 @@ with the given (shown) length.
 > showVector :: String -> RapierType -> String
 > showVector len rtype = '[' : len ++ ":" ++ show rtype ++ "]"
 
-***
+
+Read
+----
 
 Now for the trickier part, making a typestring parser for read.  This
 time, we do things the other way around, trying scalars first (because
-it's easier to parse them than to parse anything else!.  We then go
+it's easier to parse them than to parse anything else!).  We then go
 onto compound (parametric and recursive) types if our scalar parser
 fails, and then onto an error message.
 
 The type parser is guaranteed to return at most one possible parse.
 
-Firstly, we'll define two helpful function, lsep and rsep, which
-separate a list at the leftmost and rightmost occurrence of the given
-item (respectively), returning the list segments surrounding it as a
-tuple.  The whole thing is wrapped in a Maybe; the result is Nothing
-if the element does not exist.
+Firstly, we'll define a helpful function, lsep, which separates a list
+at the leftmost occurrence of the given item, returning the list
+segments surrounding it as a tuple.  The whole thing is wrapped in a
+Maybe; the result is Nothing if the element does not exist.
 
-Both are defined in terms of a common function, nsep, which removes
-the element at a given position in the list and splits the two
-adjacent sublists.
+It is defined in terms of a general function, nsep, which removes the
+element at a given position in the list and splits the two adjacent
+sublists.
 
 > lsep :: ( Eq a ) => a -> [ a ] -> Maybe ( [ a ], [ a ] )
 > lsep x lst = nsep ( elemIndex     x lst ) lst
-
-> rsep :: ( Eq a ) => a -> [ a ] -> Maybe ( [ a ], [ a ] )
-> rsep x lst = nsep ( elemIndexLast x lst ) lst
-
-elemIndexLast is a parallel function to elemIndex that returns the
-last (rightmost) index instead of the first.
-
-> elemIndexLast :: Eq a => a -> [a] -> Maybe Int
-> elemIndexLast element lst = maybeLast ( elemIndices element lst )
->     where
->     maybeLast [] = Nothing
->     maybeLast a  = Just ( last a )
 
 > nsep :: Maybe Int -> [ a ] -> Maybe ( [ a ], [ a ] )
 > nsep Nothing    _   = Nothing
@@ -390,75 +422,11 @@ The simplest property is thus:
 followed by read-ing) must not change the type."  (In other words,
 read and show must be exact inverses.)
 
-> prop_inverse :: RapierType -> Bool
-> prop_inverse rtype =
+Note: This property doesn't necessarily hold when the parameters of a
+parametric type are malformed (eg, Enum is passed weird control
+characters as one or more of the choices).  This property may need to
+be refined later.
+
+> prop_readShowInverse :: RapierType -> Bool
+> prop_readShowInverse rtype =
 >     rtype == ( read ( show rtype ) :: RapierType )
-
-
-
-Object fields
--------------
-
-Rapier objects are made primarily up of named, optionally commented
-fields.
-
-An object field definition can be an uncommented field...
-
-> data ObjectFieldDef = Uncommented ObjectField
-
-Or a comment attached to a field.
-
->                     | String :>> ObjectField
->                       deriving (Show, Read)
-
-An object field definition is thus...
-
-> data ObjectField = RpIdentifier :- RapierType
->                  deriving (Show, Read)
-
-> infixr 5 :>>
-> infixr 6 :-
-
-***
-
-A licence tag is a coupling of a URL pointing to a licence followed by
-a human-readable name for the licence.
-
-> data Licence = DescribedUrlLicence String String
->              deriving (Show, Read)
-
-***
-
-Author, licence, brief, maybe details.
-
-> data Metadata = FullMetadata Author Licence String String
->     ( Maybe String )
->               | NoMetadata
->                 deriving (Show, Read)
-
-***
-
-An author can either be a name combined with an email address, or just
-a name.
-
-> data Author = AuthorWithEmail String String
->             | AuthorNameOnly String
->               deriving (Show, Read)
-
-***
-
-A special field definition is a mapping from a string (the special
-field alias) to another string (the actual field name).
-
-> data SpecialField = String :<->: String
->                   deriving (Show, Read)
-
-> infixr 5 :<->:
-
-***
-
-Name, metadata, fields
-
-> data ObjectSpec
->     = ObjectSpec String Metadata [ObjectFieldDef] [SpecialField]
->       deriving (Show, Read)

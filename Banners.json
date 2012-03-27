@@ -1,0 +1,47 @@
+{ "name" : "Website/Banners",
+  "metadata" : {
+    "author" : {
+      "name" : "Matt Windsor",
+      "email" : "matt.windsor@ury.york.ac.uk"
+    },
+    "licence" : {
+      "uri" : "http://www.apache.org/licenses/LICENSE-2.0.html",
+      "description" :"Apache Licence 2.0"
+    },
+    "uri" : "http://ury.york.ac.uk",
+    "brief" : "A banner on the website banner rotations."
+  },
+  "fields" : [
+    { "name" : "Banner ID",
+      "type" : "Natural",
+      "comment" : "The unique number identifying the banner."
+    },
+    { "name" : "Name",
+      "type" : "String",
+      "comment" : "A human-readable name for the banner."
+    },
+    { "name" : "Filename",
+      "type" : "String",
+      "comment" : "The relative filename of the banner."
+    },
+    { "name" : "Uri",
+      "type" : "String",
+      "comment" : "An optional link to associate with the banner."
+    },
+    { "name" : "Days",
+      "type" : "[7:Boolean]",
+      "comment" :  "Which weekdays the banner should appear in."
+    },
+    { "name" : "Category",
+      "type" : "<Website/BannerCategories>",
+      "comment" : "The category of the banner."
+    },
+    { "name" : "Ordering",
+      "type" : "Natural",
+      "comment" : "A number used to order the banners."
+    }
+  ],
+  "specials" : {
+    "ID" : "Banner ID"
+  }
+}
