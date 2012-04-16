@@ -49,10 +49,14 @@ format.
 >     ) where
 > import Rapier.Obgen.Php.Types
 > import Rapier.Obgen.Php.GenComment
-> import Rapier.Obgen.Php.Utils ( toPhpAccessorName,
->                                 fieldAccess,
->                                 fieldKeyFor
->                               )
+> import Rapier.Obgen.Php.Utils
+>     ( toPhpAccessorName
+>     , fieldAccess
+>     , fieldKeyFor
+>     )
+> import Rapier.Obgen.Utils
+>     ( ( &:& )
+>     )
 
 
 To-array converter
@@ -63,24 +67,20 @@ Said code simply consists of a returning of an array mapping the
 FIELD_xyz constant keys to the results of calling the respective
 accessors.
 
-> genToArray :: [ Identifier ] -> [ PhpClassStatement ]
-> genToArray fnames = [ comment, PhpClassMethod method ]
+> genToArray :: [ Identifier ] -> [ ClassStatement ]
+> genToArray = comment &:& meth
 >     where
->     comment = PhpClassComment toArrayComment
->     method =
->         Method Public "toArray" []
->         [ Return
->           ( ArrayExpr items )
->         ]
+>     comment = ClassComment . toArrayComment
+>     meth fnames = publicInstMethod "toArray" []
+>                   [ Return ( ArrayExpr items ) ]
 >         where
 >         items = map fieldToItem fnames
->             where
->             fieldToItem name =
->                 StaticAccess "self" ( fieldKeyFor name ) :=>:
->                 FunctionCallExpr
->                 ( fieldAccess "this"
->                   ( toPhpAccessorName name )
->                 ) []
+>         fieldToItem name =
+>             StaticAccess "self" ( fieldKeyFor name ) :=>:
+>             FunctionCallExpr
+>             ( fieldAccess "this"
+>               ( toPhpAccessorName name )
+>             ) []
 
 
 From-array converter
@@ -92,14 +92,14 @@ array indices associated with each field, then it sends the results to
 the constructor which does everything else.
 
 
-> genFromArray :: ClassName -> [ Identifier ] -> [ PhpClassStatement ]
-> genFromArray cn fnames = [ comment, PhpClassMethod method ]
+> genFromArray :: ClassName -> [ Identifier ] -> [ ClassStatement ]
+> genFromArray cn fnames = [ comment, meth ]
 >     where
->     comment = PhpClassComment ( makeFromArrayComment cn )
->     method =
->         StaticMethod Public "fromArray" [ PArray :$ "$array" ]
->         ( makeFromArrayChecks fieldIndices ++
->           makeFromArrayReturn cn fieldIndices )
+>     comment = ClassComment ( makeFromArrayComment cn )
+>     meth = publicStaticMethod "fromArray" [ PArray :$ "array" ]
+>            ( makeFromArrayChecks fieldIndices ++
+>              makeFromArrayReturn cn fieldIndices
+>            )
 >     fieldIndices = map fieldKeyFor fnames
 
 ***
@@ -115,13 +115,13 @@ constructor.  Given the amount of effort Rapier puts into filtering
 the input at the constructor level, there's no sense in duplicating
 it!  As such, we ignore the type.)
 
-> makeFromArrayChecks :: [ Identifier ] -> [ PhpMethodStatement ]
+> makeFromArrayChecks :: [ Identifier ] -> [ MethodStatement ]
 > makeFromArrayChecks = map makeCheck
 >     where
 >     makeCheck index =
 >         NakedExpr
 >         ( FunctionCallExpr
->           "\\URY\\API\\Helpers\\fail_if_array_missing_key"
+>           "\\URY\\API\\Helpers\\fail_if_not_in_array"
 >           [ IdExpr "$array", StaticAccess "self" index ]
 >         )
 
@@ -133,9 +133,8 @@ requires the class name in addition to the field indices, so that the
 invocation of new knows which class to make.
 
 > makeFromArrayReturn :: ClassName -> [ Identifier ]
->                        -> [ PhpMethodStatement ]
+>                        -> [ MethodStatement ]
 > makeFromArrayReturn cn indices = [ Return ( New cn params ) ]
->     where
->       params = map indexToParam indices
->       indexToParam =
->           ArraySubscript "$array" . StaticAccess "self"
+>     where params = map indexToParam indices
+>           indexToParam =
+>               ArraySubscript "$array" . StaticAccess "self"

@@ -6,20 +6,21 @@ Part of Stonehouse, the Rapier Object Code Generator
 This file is under the public domain.
 
 > module Main ( main ) where
-> import Control.Monad ( liftM,
->                        liftM2
+> import Control.Monad ( liftM
+>                      , liftM2
 >                      )
 > import Data.List ( elemIndices )
 > import Data.Char ( isPrint )
 > import Test.QuickCheck
-> import Test.Framework ( Test,
->                         defaultMain
+> import Test.Framework ( Test
+>                       , defaultMain
 >                       )
 > import Test.Framework.Providers.QuickCheck2 ( testProperty )
-> import Rapier.Types ( RapierType ( .. ),
->                       prop_pipeInverse1,
->                       prop_pipeInverse2,
->                       prop_readShowInverse
+> import Rapier.Types ( RapierType ( .. )
+>                     , isTSBracket
+>                     , prop_pipeInverse1
+>                     , prop_pipeInverse2
+>                     , prop_readShowInverse
 >                     )
 
 Test boilerplate for Rapier.Obgen.Object
@@ -36,6 +37,7 @@ Test boilerplate for Rapier.Obgen.Object
 >                liftM RpList arbitrary,
 >                liftM RpObject arbitrary,
 >                liftM RpMap arbitrary,
+>                liftM RpMaybe arbitrary,
 >                liftM2 RpArray arbitrary arbitrary
 >              ]
 
@@ -67,6 +69,7 @@ Rapier)
 >         onlyValidStrings ( RpObject x    ) = checkString x
 >         onlyValidStrings ( RpList   x    ) = onlyValidStrings x
 >         onlyValidStrings ( RpMap    x    ) = onlyValidStrings x
+>         onlyValidStrings ( RpMaybe  x    ) = onlyValidStrings x
 >         onlyValidStrings ( RpArray  _ x  ) = onlyValidStrings x
 >         onlyValidStrings _               = True
 >         checkStrings [] = True
@@ -75,14 +78,7 @@ Rapier)
 >             | otherwise             = False
 >         checkString [] = True
 >         checkString ( x : xs )
->             | x == '{'           = False
->             | x == '}'           = False
->             | x == '['           = False
->             | x == ']'           = False
->             | x == '<'           = False
->             | x == '>'           = False
->             | x == '('           = False
->             | x == ')'           = False
+>             | isTSBracket x      = False
 >             | isPrint x == False = False
 >             | otherwise          = checkString xs
 

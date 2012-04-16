@@ -42,13 +42,32 @@ takes an abstract Rapier object (see Rapier.Obgen.Object) and converts
 it into an abstract specification of a PHP program, which can then be
 passed to the PHP compiler to create a PHP code file.
 
-> module Rapier.Obgen.Php.Generate (generatePhp) where
+> module Rapier.Obgen.Php.Generate
+>     ( generatePhp -- ObjectSpec -> Maybe Php
+>     )
+> where
 > import Rapier.Obgen.Php.GenComment
+>     ( makeInitialComment
+>     )
 > import Rapier.Obgen.Php.GenClass
-> import Rapier.Obgen.Php.Namespaces (rapierClassToPhpNamespace)
+>     ( genClass
+>     )
+> import Rapier.Obgen.Php.Namespaces
+>     ( rapierClassToPhpNamespace
+>     )
 > import Rapier.Obgen.Php.Types
+>     ( Php ( StatementList )
+>     , ClassName
+>     , Namespace
+>     , Statement ( CommentStatement
+>                 , NamespaceStatement
+>                 , RequireOnceStatement
+>                 )
+>     )
 > import Rapier.Obgen.Object
-
+>     ( ObjectSpec ( ObjectSpec )
+>     , Metadata
+>     )
 
 Default class name
 ------------------
@@ -67,9 +86,9 @@ Given an object specification, the following function creates a PHP
 class object for a PHP class implementing that specification.
 
 > generatePhp :: ObjectSpec -> Maybe Php
-> generatePhp (ObjectSpec rclass metadata fields specials) =
+> generatePhp ( ObjectSpec rclass metadata fields specials ) =
 >     Just
->     ( PhpStatementList
+>     ( StatementList
 >       ( makePreamble ns defaultClassName metadata ++
 >         genClass ns defaultClassName metadata fields specials
 >       )
@@ -83,11 +102,13 @@ Preamble
 The preamble of a PHP Rapier class is the initial file doc comment,
 the namespace, and a set of common imports.
 
-> makePreamble :: Namespace -> ClassName -> Metadata -> [PhpStatement]
+> makePreamble :: Namespace -> ClassName -> Metadata -> [ Statement ]
 > makePreamble namespace classname metadata =
->     [ CommentStatement initialComment,
->       NamespaceStatement namespace,
->       RequireOnceStatement "helpers/rapier_rtypes.php" ]
->         where
->         initialComment =
->             makeInitialComment namespace classname metadata
+>     [ CommentStatement initialComment
+>     , NamespaceStatement namespace
+>     , RequireOnceStatement "helpers/rapier_typecheck.php"
+>     , RequireOnceStatement "helpers/rapier_rtypes.php"
+>     ]
+>     where
+>     initialComment =
+>         makeInitialComment namespace classname metadata

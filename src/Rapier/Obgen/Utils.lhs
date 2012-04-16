@@ -40,17 +40,23 @@ Licencing mumbo-jumbo aside...
 This module collects together some useful utility functions.
 
 > module Rapier.Obgen.Utils
->     ( lowerCaseInitial,
->       -- :: String -> String
->       upperCaseInitial,
->       -- :: String -> String
->       enquote,
->       -- :: String -> String
->       doubleEnquote
->       -- :: String -> String
->     ) where
-
-> import Data.Char (toLower, toUpper)
+>     ( lowerCaseInitial -- String -> String
+>     , upperCaseInitial -- String -> String
+>     , enquote          -- String -> String
+>     , doubleEnquote    -- String -> String
+>     , pairToList       -- ( a, a ) -> [ a ]
+>     , ( &:& )          -- Arrow a => a b c -> a b c -> a b [ c ]
+>     )
+> where
+> import Data.Char
+>     ( toLower
+>     , toUpper
+>     )
+> import Control.Arrow
+>     ( Arrow
+>     , ( &&& )
+>     , ( ^<< )
+>     )
 
 
 Changing the case of the initial letter of a string
@@ -80,8 +86,24 @@ Enquoting strings
 enquote encapsulates a string in single quotes; doubleEnquote
 encapsulates in double quotes.
 
-> enquote :: String -> String
+> enquote, doubleEnquote :: String -> String
 > enquote = ( "'"++ ) . ( ++"'" )
-
-> doubleEnquote :: String -> String
 > doubleEnquote = ( "\""++ ) . ( ++"\"" )
+
+
+Pairs to lists
+--------------
+
+> pairToList :: ( a, a ) -> [ a ]
+> pairToList ( x, y ) = [ x, y ]
+
+
+&:& is like &&&, in that it performs its two arrow arguments on a
+given parameter, but it returns the results as a list rather than as a
+tuple.  It's useful when sending one variable to two functions that
+you then want in a list form (ie list of statements when compiling).
+
+> ( &:& ) :: Arrow a => a b c -> a b c -> a b [ c ]
+> ( &:& ) = pairToList `comp` ( &&& )
+>     where comp = ( ^<< ) . ( ^<< ) . ( ^<< )
+>     -- I kid you not

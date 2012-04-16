@@ -45,23 +45,42 @@ into a PHP class.
 >       -- :: Namespace -> ClassName -> Metadata -> [ ObjectFieldDef ]
 >       --    -> [ SpecialField ] -> [ PhpStatement ]
 >     ) where
-> import Rapier.Obgen.Object
 > import Rapier.Obgen.Php.Types
-> import Rapier.Obgen.Php.Namespaces ( qualifyPhpClassName )
+> import Rapier.Obgen.Php.Namespaces
+>     ( qualifyPhpClassName
+>     )
 > import Rapier.Obgen.Php.GenComment
-> import Rapier.Obgen.Php.GenArrayConverters ( genToArray,
->                                              genFromArray )
-> import Rapier.Obgen.Php.Utils ( toPhpFieldName,
->                                 toPhpParamName,
->                                 toPhpIndexName,
->                                 toPhpAccessorName,
->                                 rapierTypeToPhp,
->                                 fieldAccess,
->                                 fieldKeyFor
->                               )
-> import Rapier.Obgen.Utils ( lowerCaseInitial,
->                             enquote
->                           )
+> import Rapier.Obgen.Php.GenArrayConverters
+>     ( genToArray
+>     , genFromArray
+>     )
+> import Rapier.Obgen.Php.Utils
+>     ( toPhpFieldName
+>     , toPhpParamName
+>     , toPhpIndexName
+>     , toPhpAccessorName
+>     , rapierTypeToPhp
+>     , fieldAccess
+>     , fieldKeyFor
+>     )
+> import Rapier.Obgen.Object
+>     ( SpecialField
+>     , Metadata       ( .. )
+>     , ObjectFieldDef ( .. )
+>     , ObjectField    ( .. )
+>     , fieldName
+>     , fieldOfDef
+>     , fieldNameOfDef
+>     , resolveDef
+>     )
+> import Rapier.Obgen.Utils
+>     ( lowerCaseInitial
+>     , enquote
+>     , ( &:& )
+>     )
+> import Rapier.Utils
+>     ( escape
+>     )
 
 
 Constants
@@ -72,27 +91,6 @@ classes.
 
 > genericInheritance :: Inheritance
 > genericInheritance = Implements ( qualifyPhpClassName "Object" )
-
-
-Useful function: Deriving the name of a field
----------------------------------------------
-
-> fieldName :: ObjectField -> String
-> fieldName ( name :- _ ) = name
-
-
-Another useful function: Deriving the field of a field def
-----------------------------------------------------------
-
-> fieldOfDef :: ObjectFieldDef -> ObjectField
-> fieldOfDef ( Uncommented f ) = f
-> fieldOfDef ( _ :>> f ) = f
-
-
-The above two functions compose....
-
-> fieldNameOfDef :: ObjectFieldDef -> String
-> fieldNameOfDef = fieldName . fieldOfDef
 
 
 Class generator
@@ -106,20 +104,20 @@ about any comments attached to a field or its Rapier type, so we just
 pass in the field name (fname) to make things tidier.
 
 > genClass :: Namespace -> ClassName -> Metadata -> [ ObjectFieldDef ]
->          -> [ SpecialField ] -> [ PhpStatement ]
+>          -> [ SpecialField ] -> [ Statement ]
 > genClass ns cn metadata defs sfs = [ docblock, classdef ]
 >     where
 >     docblock =
 >         CommentStatement ( makeClassComment ns metadata )
->     classdef = PhpClass cn genericInheritance stms
+>     classdef = Class cn genericInheritance stms
 >         where
->         stms = concat [ makeFieldDeclarations defs,
->                         makeConstants sfs fields,
->                         makeConstructor defs,
->                         makeFieldAccessorStms defs,
->                         genToArray fnames,
->                         genFromArray cn fnames,
->                         metadataRetriever
+>         stms = concat [ makeFieldDeclarations defs
+>                       , makeConstants sfs fields
+>                       , makeConstructor defs
+>                       , makeFieldAccessorStms defs
+>                       , genToArray fnames
+>                       , genFromArray cn fnames
+>                       , metadataRetriever
 >                       ]
 >         fnames = map fieldNameOfDef defs
 >         fields = map fieldOfDef defs
@@ -134,15 +132,15 @@ statements.
 The first thing we do is make field declarations for every field in
 the object specification.
 
-> makeFieldDeclarations :: [ ObjectFieldDef ] -> [ PhpClassStatement ]
+> makeFieldDeclarations :: [ ObjectFieldDef ] -> [ ClassStatement ]
 > makeFieldDeclarations = concatMap makeFieldDeclaration
 >     where
 >     makeFieldDeclaration ( comment :>> field ) =
->         PhpClassComment ( LineComment comment ) :
+>         ClassComment ( LineComment comment ) :
 >         makeFieldDeclaration ( Uncommented field )
 >     makeFieldDeclaration ( Uncommented field ) =
->         [ PhpClassField
->           ( Var
+>         [ ClassField
+>           ( Var Instance
 >             Private
 >             ( ( toPhpFieldName . fieldName ) field )
 >             Nothing
@@ -171,7 +169,7 @@ constants is as follows:
    the relevant FIELD_xyz constants.
 
 > makeConstants :: [ SpecialField ] -> [ ObjectField ]
->               -> [ PhpClassStatement ]
+>               -> [ ClassStatement ]
 > makeConstants aliases fields =
 >     concat [ classLineComment "ARRAY INDICES //" :
 >              makeFieldNameConstants fnames,
@@ -186,13 +184,13 @@ constants is as follows:
 
 Constants part 1: make field name constants.
 
-> makeFieldNameConstants :: [ Identifier ] -> [ PhpClassStatement ]
+> makeFieldNameConstants :: [ Identifier ] -> [ ClassStatement ]
 > makeFieldNameConstants = concatMap makeFieldNameConstant
 >     where
 >     makeFieldNameConstant fname =
 >         [ classLineComment
 >           ( "Array index for " ++ fname ),
->           PhpClassField
+>           ClassField
 >           ( Const
 >             ( fieldKeyFor fname )
 >             ( ( enquote . toPhpIndexName ) fname )
@@ -203,10 +201,10 @@ Constants part 1: make field name constants.
 
 Part 2: FIELD_METADATA.
 
-> makeFieldMetadataArray :: [ ObjectField ] -> [ PhpClassStatement ]
+> makeFieldMetadataArray :: [ ObjectField ] -> [ ClassStatement ]
 > makeFieldMetadataArray fields =
->     [ PhpClassField
->       ( StaticVar Public "FIELD_METADATA"
+>     [ ClassField
+>       ( Var Static Public "FIELD_METADATA"
 >         ( Just ( ArrayExpr metadataArrays ) )
 >       )
 >     ]
@@ -217,11 +215,11 @@ Part 2: FIELD_METADATA.
 > makeMetadataSubArray ( fname :- ftype ) =
 >     StaticAccess "self" ( fieldKeyFor fname ) :=>:
 >     ArrayExpr
->       [ IdExpr "\\URY\\API\\Helpers\\RAPIER_NAME" :=>:
+>       [ IdExpr "RAPIER_NAME" :=>:
 >         SingleQuotedString fname,
->         IdExpr "\\URY\\API\\Helpers\\ACCESSOR" :=>:
+>         IdExpr "ACCESSOR" :=>:
 >         SingleQuotedString ( toPhpAccessorName fname ),
->         IdExpr "\\URY\\API\\Helpers\\TYPE_ID" :=>:
+>         IdExpr "TYPE_ID" :=>:
 >         SingleQuotedString ( show ftype )
 >       ]
 
@@ -229,15 +227,15 @@ Part 2: FIELD_METADATA.
 
 Part 3: SPECIAL_FIELDS.
 
-> makeSpecialFieldsArray :: [ SpecialField ] -> [ PhpClassStatement ]
+> makeSpecialFieldsArray :: [ SpecialField ] -> [ ClassStatement ]
 > makeSpecialFieldsArray specials =
->     [ PhpClassField
->       ( StaticVar Public "SPECIAL_FIELDS"
+>     [ ClassField
+>       ( Var Static Public "SPECIAL_FIELDS"
 >         ( Just ( ArrayExpr specialFieldDefs ) )
 >       )
 >     ]
->         where
->         specialFieldDefs = map makeSpecialFieldDef specials
+>     where
+>     specialFieldDefs = map makeSpecialFieldDef specials
 
 > makeSpecialFieldDef :: SpecialField -> ArrayItem
 > makeSpecialFieldDef ( alias, fname ) =
@@ -257,11 +255,11 @@ Most of the work of the constructor is farmed out to a pre-written PHP
 parameters, throws an exception if anything looks shady, and returns a
 massaged version of the input otherwise.
 
-> makeConstructor :: [ ObjectFieldDef ] -> [ PhpClassStatement ]
-> makeConstructor defs = [ comment, PhpClassMethod method ]
+> makeConstructor :: [ ObjectFieldDef ] -> [ ClassStatement ]
+> makeConstructor = genComment &:& ( genMeth . map fieldOfDef )
 >     where
->     comment = PhpClassComment ( makeConstructorComment defs )
->     method = Method Public "__construct" params stms
+>     genComment = ClassComment . makeConstructorComment
+>     genMeth fields = publicInstMethod "__construct" params stms
 >         where
 >         params = map fieldToParam fields
 >             where
@@ -272,13 +270,12 @@ massaged version of the input otherwise.
 >             fieldToStm ( name :- rtype ) =
 >                 fieldAccess "this" ( toPhpFieldName name ) :=
 >                 FunctionCallExpr
->                 "\\URY\\API\\Helpers\\filter_object_field"
+>                 "\\URY\\API\\Helpers\\filter_to_typestring"
 >                 [ IdExpr
->                   ( ( enquote . show ) rtype ),
+>                   ( '$' : toPhpParamName name ),
 >                   IdExpr
->                   ( '$' : toPhpParamName name )
+>                   ( ( enquote . escape '\'' . show ) rtype )
 >                 ]
->         fields = map fieldOfDef defs
 
 
 4. Field accessors
@@ -287,47 +284,32 @@ massaged version of the input otherwise.
 The fourth part of a class is the field accessor set, which describes
 the methods that can be used to get the value of a field.
 
-> makeFieldAccessorStms :: [ ObjectFieldDef ] -> [ PhpClassStatement ]
-> makeFieldAccessorStms = concatMap gen
+> makeFieldAccessorStms :: [ ObjectFieldDef ] -> [ ClassStatement ]
+> makeFieldAccessorStms =
+>     concatMap ( ( genDoc &:& genMeth ) . resolveDef )
 >     where
->     -- If no comment, synthesise one from the field name.
->     gen ( Uncommented field ) = gen ( fieldName field :>> field )
->     -- Base case.
->     gen ( comment :>> field ) =
->         [ accComment field, accMethod field ]
->             where
->             accComment ( _ :- rpType ) =
->                 PhpClassComment
->                 ( DocComment
->                   ( "Gets " ++ lowerCaseInitial comment )
->                   Nothing
->                   [ DcReturn ( rapierTypeToPhp rpType ) comment ]
->                 )
->             accMethod ( idName :- _ ) =
->                 PhpClassMethod
->                 ( Method Public (toPhpAccessorName idName) []
->                   [ Return
->                     ( IdExpr
->                       ( fieldAccess "this"
->                         ( toPhpFieldName idName )
->                       )
->                     )
->                   ]
->                 )
+>     genDoc ( comment, _ :- rtype ) =
+>         classDocComment ( "Gets " ++ lowerCaseInitial comment )
+>                         Nothing
+>                         [ DcReturn ( rapierTypeToPhp rtype )
+>                                    comment
+>                         ]
+>     genMeth ( _, name :- _ ) = publicInstMethod
+>                                ( toPhpAccessorName name )
+>                                []
+>                                [ Return
+>                                  ( IdExpr
+>                                    ( fieldAccess "this"
+>                                      ( toPhpFieldName name )
+>                                    )
+>                                  )
+>                                ]
 
 
-5. To-array converter
+5/6. Array converters
 ---------------------
 
-This is the first part of the GenArrayConverters module, and is thus
-described there.
-
-
-6. From-array converter
------------------------
-
-This is the second part of the GenArrayConverters module, and is thus
-described there.
+These are in the GenArrayConverters module.
 
 
 7. Metadata retriever
@@ -341,35 +323,19 @@ reflection mechanism.
 The metadata retrieving code is the same throughout all objects, so
 the function returning it is a thunk.
 
-> metadataRetriever :: [ PhpClassStatement ]
-> metadataRetriever = [ comment, method ]
+> metadataRetriever :: [ ClassStatement ]
+> metadataRetriever = [ doc, meth ]
 >     where
->     comment =
->         PhpClassComment
->         ( DocComment
+>     doc = classDocComment
 >           "Returns the metadata object for this Rapier class."
 >           Nothing
->           [ DcReturn (PObject className) "the metadata object" ]
->         )
->     method =
->         PhpClassMethod
->         ( StaticMethod Public "metadata" []
->           [ Return
->             ( New className
->               [ StaticAccess "self" "$FIELD_METADATA",
->                 StaticAccess "self" "$SPECIAL_FIELDS"
->               ]
->             )
->           ]
->         )
+>           [ DcReturn ( PObject className ) "the metadata object" ]
+>     meth = publicStaticMethod "metadata" []
+>            [ Return
+>              ( New className
+>                [ StaticAccess "self" "$FIELD_METADATA"
+>                , StaticAccess "self" "$SPECIAL_FIELDS"
+>                ]
+>              )
+>            ]
 >     className = "\\URY\\API\\Metadata"
-
-
-Convenience functions
----------------------
-
-This function quickly makes a class statement wrapping up a line
-comment.
-
-> classLineComment :: String -> PhpClassStatement
-> classLineComment = PhpClassComment . LineComment

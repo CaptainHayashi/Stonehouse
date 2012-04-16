@@ -45,7 +45,22 @@ concrete languages.
 As this is a data-type-only module, we expose everything to other
 modules.
 
-> module Rapier.Obgen.Object where
+> module Rapier.Obgen.Object
+>     ( RpIdentifier
+>     , RapierClass
+>     , SpecialField
+>     , ObjectFieldDef ( .. )
+>     , ObjectField    ( .. )
+>     , Licence        ( .. )
+>     , Metadata       ( .. )
+>     , Author         ( .. )
+>     , ObjectSpec     ( .. )
+>     , fieldName        -- ObjectField -> String
+>     , fieldOfDef       -- ObjectFieldDef -> ObjectField
+>     , fieldNameOfDef   -- ObjectFieldDef -> String
+>     , resolveDef       -- ObjectFieldDef -> ( String, ObjectField )
+>     )
+>     where
 > import Rapier.Types ( RapierType )
 
 
@@ -84,6 +99,38 @@ An object field definition is thus...
 
 > infixr 5 :>>
 > infixr 6 :-
+
+
+Utility functions on field names
+--------------------------------
+
+Useful function: Deriving the name of a field
+
+> fieldName :: ObjectField -> String
+> fieldName ( name :- _ ) = name
+
+
+Another useful function: Deriving the field of a field def
+
+> fieldOfDef :: ObjectFieldDef -> ObjectField
+> fieldOfDef ( Uncommented field ) = field
+> fieldOfDef ( _       :>> field ) = field
+
+
+The above two functions compose....
+
+> fieldNameOfDef :: ObjectFieldDef -> String
+> fieldNameOfDef = fieldName . fieldOfDef
+
+
+resolveDef converts a field definition to a tuple of field and
+comment, substituting in the name of the field if the field is
+uncommented.
+
+> resolveDef :: ObjectFieldDef -> ( String, ObjectField )
+> resolveDef ( Uncommented field ) = ( fieldName field, field )
+> resolveDef ( comment :>> field ) = ( comment        , field )
+
 
 ***
 

@@ -45,32 +45,38 @@ compilation of methods is one of the most involved parts of the
 compiler.
 
 > module Rapier.Obgen.Php.CompileMethod
->     ( compileMethod
->       -- :: PhpMethod -> String
->     ) where
-> import Rapier.Obgen.Php.CompileCommon ( compileVisibility,
->                                         indent,
->                                         compileParams )
-> import Rapier.Obgen.Php.CompileExpr ( compileExpr )
+>     ( compileMethod -- PhpMethod -> String
+>     )
+> where
+> import Rapier.Obgen.Php.CompileCommon
+>     ( compileVisibility
+>     , indent
+>     , compileParams
+>     )
+> import Rapier.Obgen.Php.CompileExpr
+>     ( compileExpr
+>     )
 > import Rapier.Obgen.Php.Types
 
 
 Compiling methods
 -----------------
 
-> compileMethod :: PhpMethod -> String
-> compileMethod (StaticMethod vis name params body) =
->     "static " ++ compileMethod (Method vis name params body)
-> compileMethod (Method vis name params body) =
->     concat [ compileVisibility vis,
->              " function ",
->              name,
->              compileMethodParams params,
->              maybeAddExtraNewline params,
->              "{\n",
->              indent (compileMethodStms body),
->              "}\n" ]
+> compileMethod :: Method -> String
+> compileMethod ( Method scope vis name params body ) =
+>     concat [ staticPrefix scope
+>            , compileVisibility vis
+>            , " function "
+>            , name
+>            , compileMethodParams params
+>            , maybeAddExtraNewline params
+>            , "{\n"
+>            , indent ( compileMethodStms body )
+>            , "}\n"
+>            ]
 >     where
+>     staticPrefix Static = "static "
+>     staticPrefix _      = ""
 >     -- We want another newline between the param list and the
 >     -- block, if there are <= 2 params (and thus the param list is
 >     -- inline instead of being split over a few lines).
@@ -94,7 +100,7 @@ usage of PHP's parameter type checks where possible (at time of
 writing, not much)
 
 > compileMethodParam :: Param -> String
-> compileMethodParam (phpType :$ name)
+> compileMethodParam ( phpType :$ name )
 >     | phpType == PArray = "array $" ++ name
 >     | otherwise         = '$':name
 
@@ -103,7 +109,7 @@ writing, not much)
 And this function compiles the body of the method (its set of
 statements).
 
-> compileMethodStms :: [PhpMethodStatement] -> String
+> compileMethodStms :: [ MethodStatement ] -> String
 > compileMethodStms = concatMap compileMethodStm
 >     where
 >     compileMethodStm ( NakedExpr expr ) = compileExpr expr ++ ";\n"

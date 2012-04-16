@@ -1,5 +1,5 @@
-Rapier.Obgen.Php.CompileMethod
-==============================
+Rapier.Obgen.Php.Utils
+======================
 
 Part of Stonehouse, the Rapier Object Code Generator
 
@@ -148,7 +148,7 @@ Rapier types mapping to PHP types
 This function takes a Rapier type literal, and returns the
 corresponding PHP type literal.
 
-> rapierTypeToPhp :: RapierType -> PhpType
+> rapierTypeToPhp :: RapierType -> Type
 > rapierTypeToPhp RpInteger        = PInteger
 > rapierTypeToPhp RpNatural        = PInteger
 > rapierTypeToPhp RpReal           = PDouble
@@ -161,6 +161,7 @@ corresponding PHP type literal.
 > rapierTypeToPhp ( RpMap    _   ) = PArray
 > rapierTypeToPhp ( RpObject _   ) = PMixed
 > rapierTypeToPhp ( RpArray  _ _ ) = PArray
+> rapierTypeToPhp ( RpMaybe  _   ) = PMixed
 
 
 Array key constant for a given field

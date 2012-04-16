@@ -62,10 +62,9 @@ list compiler (which simply joins all the results of compileStm on
 each statement with newlines) in PHP opening and closing tags.
 
 > compile :: Php -> String
-> compile ( PhpStatementList stms ) =
+> compile ( StatementList stms ) =
 >     concat [ "<?php\n", compileStms stms, "?>" ]
->         where
->         compileStms = concatMap compileStm
+>         where compileStms = concatMap compileStm
 
 
 Statement compiler
@@ -74,7 +73,7 @@ Statement compiler
 This function is responsible for compiling outer statements (those
 that aren't inside a class).  It mainly delegates to other functions.
 
-> compileStm :: PhpStatement -> String
+> compileStm :: Statement -> String
 
 Compiling comments is covered in the CompileComment module.
 
@@ -84,7 +83,7 @@ Compiling comments is covered in the CompileComment module.
 >     '\n' : compileNamespace ns ++ "\n"
 > compileStm ( RequireOnceStatement file ) =
 >     "require_once '" ++ file ++ "';\n\n"
-> compileStm ( PhpClass name inherits statements ) =
+> compileStm ( Class name inherits statements ) =
 >     concat [ compileClassSignature name inherits,
 >              "{\n",
 >              indent ( compileClassStms statements ),
@@ -122,15 +121,12 @@ This function compiles the list of statements making up a class body
 into a string.  It doesn't need to handle indenting all the class
 statements inward one level-- that's done upstream.
 
-> compileClassStms :: [ PhpClassStatement ] -> String
-> compileClassStms = remTrailingNewlines . concatMap compileClassStm
+> compileClassStms :: [ ClassStatement ] -> String
+> compileClassStms = remTrailingNewlines . concatMap comp
 >     where
->     compileClassStm ( PhpClassComment comment ) =
->         compileComment comment
->     compileClassStm ( PhpClassMethod method ) =
->         compileMethod method ++ "\n\n"
->     compileClassStm ( PhpClassField field ) =
->         compileField field ++ "\n\n"
+>     comp ( ClassComment com   ) = compileComment com
+>     comp ( ClassMethod  meth  ) = compileMethod meth ++ "\n\n"
+>     comp ( ClassField   field ) = compileField field ++ "\n\n"
 >     -- The following is probably woefully inefficient...
 >     remTrailingNewlines = reverse . remInitNewlines . reverse
 >     remInitNewlines [] = []
@@ -144,15 +140,18 @@ Compiling a field
 Compiling a field statement is quite simple, compared to some other
 parts of our PHP subset.
 
-> compileField :: PhpField -> String
+> compileField :: Field -> String
 > compileField ( Const name definition ) =
 >     concat [ "const ", name, " = ", definition, ";\n" ]
-> compileField ( StaticVar vis name maybeDef ) =
->     "static " ++ compileField ( Var vis name maybeDef )
-> compileField ( Var vis name maybeDef ) =
->     concat [ compileVisibility vis,
->              " $",  name,
->              defTail,
->              ";\n" ]
->         where
->         defTail = maybe "" ( ( " = "++ ) . compileExpr) maybeDef
+> compileField ( Var scope vis name maybeDef ) =
+>     concat [ staticPrefix scope
+>            , compileVisibility vis
+>            , " $"
+>            , name
+>            , defTail
+>            , ";\n"
+>            ]
+>     where
+>     staticPrefix Static = "static "
+>     staticPrefix _      = ""
+>     defTail = maybe "" ( ( " = "++ ) . compileExpr) maybeDef

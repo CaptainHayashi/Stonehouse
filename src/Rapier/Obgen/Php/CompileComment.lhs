@@ -79,7 +79,7 @@ Compiling comments
 Now for compiling comments.  This is mostly trivial, _except_ for the
 case of compiling a docblock.
 
-> compileComment :: PhpComment -> String
+> compileComment :: Comment -> String
 > compileComment ( LineComment str ) = concat [ "// ", str, "\n" ]
 > compileComment ( BlockComment str ) = concat [ "/* ", str, " */" ]
 

@@ -52,10 +52,11 @@ This module provides functions to generate PHP documentation comments.
 >       -- :: ClassName -> DocComment
 >     ) where
 > import Rapier.Obgen.Php.Types
-> import Rapier.Obgen.Php.Utils ( rapierTypeToPhp,
->                                 toPhpParamName )
+> import Rapier.Obgen.Php.Utils
+>     ( rapierTypeToPhp
+>     , toPhpParamName
+>     )
 > import Rapier.Obgen.Object
-> import Data.List ( intercalate )
 
 
 Initial comment details
@@ -65,14 +66,15 @@ The initial comment contains the following details section.
 
 > initialCommentDetails :: String
 > initialCommentDetails
->     = intercalate "\n"
->       [ "Part of Rapier",
->         "",
->         "Php Version 5.4",
->         "",
->         "WARNING: This class has been automatically generated.",
->         "As such, manual changes to this class file may be lost",
->         "if and when the class is re-generated." ]
+>     = ( init . unlines ) -- Removes trailing newline
+>       [ "Part of Rapier"
+>       , ""
+>       , "PHP Version 5.4"
+>       , ""
+>       , "WARNING: This class has been automatically generated."
+>       , "As such, manual changes to this class file may be lost"
+>       , "if and when the class is re-generated."
+>       ]
 
 
 Generic metadata
@@ -103,7 +105,7 @@ Class comment
 Given object metadata, the following function creates a before-class
 comment containing the metadata.
 
-> makeClassComment :: Namespace -> Metadata -> PhpComment
+> makeClassComment :: Namespace -> Metadata -> Comment
 
 If there is no metadata given, replace the (lack of) metadata with the
 generic metadata and try again.
@@ -118,17 +120,16 @@ out of it.
 >     DocComment
 >     brief
 >     dets
->     [ DcCategory "Rapier",
->       DcPackage ns,
->       DcAuthor (nameOf auth) (emailOf auth),
->       makePhpLicence licence,
->       DcLink uri
+>     [ DcCategory "Rapier"
+>     , DcPackage ns
+>     , DcAuthor (nameOf auth) (emailOf auth)
+>     , makePhpLicence licence
+>     , DcLink uri
 >     ]
->     where
->       nameOf  (AuthorWithEmail name _)  = name
->       nameOf  (AuthorNameOnly name)     = name
->       emailOf (AuthorWithEmail _ email) = email
->       emailOf (AuthorNameOnly _)        = ""
+>     where nameOf  ( AuthorWithEmail name _  ) = name
+>           nameOf  ( AuthorNameOnly  name    ) = name
+>           emailOf ( AuthorWithEmail _ email ) = email
+>           emailOf ( AuthorNameOnly  _       ) = ""
 
 
 Initial comment
@@ -143,16 +144,14 @@ terms of it.  We "patch" the metadata to replace its brief with the
 class name and details with a generic statement about which versions
 of PHP are supported etc.
 
-> makeInitialComment :: Namespace -> ClassName -> Metadata -> PhpComment
-> makeInitialComment ns cn metadata =
->     makeClassComment ns (patch metadata)
+> makeInitialComment :: Namespace -> ClassName -> Metadata -> Comment
+> makeInitialComment ns cn = makeClassComment ns . patch
 >         where
 >         patch ( NoMetadata ) = patch genericMetadata
 >         patch ( FullMetadata author licence uri _ _ ) =
 >             FullMetadata author licence uri brief' details'
->                 where
->                 brief' = concat [ ns, "\\", cn, " class" ]
->                 details' = Just initialCommentDetails
+>                 where brief'   = concat [ ns, "\\", cn, " class" ]
+>                       details' = Just initialCommentDetails
 
 
 Constructor comment
@@ -161,7 +160,7 @@ Constructor comment
 Given the set of fields in an object, this function creates a comment
 to go with the object's constructor.
 
-> makeConstructorComment :: [ ObjectFieldDef ] -> PhpComment
+> makeConstructorComment :: [ ObjectFieldDef ] -> Comment
 > makeConstructorComment fields =
 >     DocComment
 >     "Constructs the object."
@@ -179,12 +178,13 @@ To-array comment
 
 This is a canned to-array comment.
 
-> toArrayComment :: PhpComment
+> toArrayComment :: [ Identifier ] -> Comment
 > toArrayComment =
->     DocComment
->     "Converts the object to its array form."
->     Nothing
->     [ DcReturn PArray "the object, in array form" ]
+>     const ( DocComment
+>             "Converts the object to its array form."
+>             Nothing
+>             [ DcReturn PArray "the object, in array form" ]
+>           )
 
 
 From-array comment
@@ -193,7 +193,7 @@ From-array comment
 This is a (mostly canned, with the exception of a customisable
 class-name) from-array comment.
 
-> makeFromArrayComment :: ClassName -> PhpComment
+> makeFromArrayComment :: ClassName -> Comment
 > makeFromArrayComment cn =
 >     DocComment
 >     "Converts an object of this type from its array form."
@@ -228,7 +228,7 @@ in which every incoming parameter is a value for one of the object's
 fields.
 
 > makeParamFromField :: ObjectField -> String -> DcParam
-> makeParamFromField (name :- rtype) =
+> makeParamFromField ( name :- rtype ) =
 >     CommentedParam ptype name'
 >         where
 >           ptype = rapierTypeToPhp rtype

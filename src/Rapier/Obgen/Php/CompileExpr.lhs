@@ -48,6 +48,7 @@ code.
 > import Rapier.Obgen.Php.CompileCommon ( compileParams )
 > import Rapier.Obgen.Utils ( enquote,
 >                             doubleEnquote )
+> import Rapier.Utils ( escape )
 
 
 Compiling an expression
@@ -56,17 +57,20 @@ Compiling an expression
 This function takes a PHP expression as an algebraic data expression
 and compiles it into a string.
 
-> compileExpr :: PhpExpr -> String
+> compileExpr :: Expr -> String
 > compileExpr ( StaticAccess className ident ) =
 >     className ++ "::" ++ ident;
 > compileExpr ( IdExpr ident ) = ident;
 > compileExpr ( FunctionCallExpr name args ) =
 >     name ++ compileArguments args
-> compileExpr ( ArrayExpr items ) = "array " ++ compileArrayBody items
+> compileExpr ( ArrayExpr items ) =
+>     "array " ++ compileArrayBody items
 > compileExpr ( ArraySubscript array subscript ) =
 >     array ++ "[ " ++ compileExpr subscript ++ " ]"
-> compileExpr ( SingleQuotedString string ) = enquote string
-> compileExpr ( DoubleQuotedString string ) = doubleEnquote string
+> compileExpr ( SingleQuotedString string ) =
+>     ( enquote . escape '\'' ) string
+> compileExpr ( DoubleQuotedString string ) =
+>     ( doubleEnquote . escape '"' ) string
 > compileExpr ( New name args ) =
 >     "new " ++ name ++ compileArguments args
 > compileExpr ( IntLiteral int ) = show int
@@ -79,7 +83,7 @@ This function compiles a list of function call arguments, by applying
 the generic CompileCommon compileParams function with each argument
 being compiled as an expr.
 
-> compileArguments :: [ PhpExpr ] -> String
+> compileArguments :: [ Expr ] -> String
 > compileArguments = compileParams compileExpr
 
 

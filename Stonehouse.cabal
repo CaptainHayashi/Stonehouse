@@ -24,7 +24,8 @@ Library
                    Rapier.Obgen.Php.Compile,
                    Rapier.Obgen.Object,
                    Rapier.Obgen.Utils,
-                   Rapier.Types
+                   Rapier.Types,
+                   Rapier.Utils
 
 Executable rapier-jsonsource
   Main-Is: Main.lhs

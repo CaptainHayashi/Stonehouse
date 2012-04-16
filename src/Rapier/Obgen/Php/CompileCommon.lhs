@@ -41,17 +41,15 @@ This module collates together some small functions used across many
 different parts of the PHP abstract->concrete compiler.
 
 > module Rapier.Obgen.Php.CompileCommon
->     ( compileVisibility,
->       -- :: Visibility -> String
->       indent,
->       -- :: String -> String
->       compileParams,
->       -- :: ( a -> String ) -> [ a ] -> String
->       typeName
->       -- :: PhpType -> String
+>     ( compileVisibility -- Visibility -> String
+>     , indent            -- String -> String
+>     , compileParams     -- ( a -> String ) -> [ a ] -> String
+>     , typeName          -- PhpType -> String
 >     ) where
 > import Rapier.Obgen.Php.Types
-> import Data.List ( intercalate )
+> import Data.List
+>     ( intercalate
+>     )
 
 
 Visibility compilation
@@ -104,7 +102,7 @@ Compiling PHP types
 This is a simple pattern matching exercise used to translate PHP data
 types into the strings that are used to identify them in concrete PHP.
 
-> typeName :: PhpType -> String
+> typeName :: Type -> String
 > typeName PString       = "string"
 > typeName PInteger      = "integer"
 > typeName PBool         = "bool"
