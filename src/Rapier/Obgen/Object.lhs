@@ -59,9 +59,18 @@ modules.
 >     , fieldOfDef       -- ObjectFieldDef -> ObjectField
 >     , fieldNameOfDef   -- ObjectFieldDef -> String
 >     , resolveDef       -- ObjectFieldDef -> ( String, ObjectField )
+>     , directoryName    -- ObjectSpec -> String
 >     )
->     where
-> import Rapier.Types ( RapierType )
+> where
+> import Rapier.Types
+>     ( RapierType
+>     )
+> import Data.Char
+>     ( toLower
+>     )
+> import System.FilePath
+>     ( pathSeparator
+>     )
 
 
 Type synonyms
@@ -172,3 +181,12 @@ Name, metadata, fields
 > data ObjectSpec
 >     = ObjectSpec String Metadata [ ObjectFieldDef ] [ SpecialField ]
 >       deriving ( Show, Read )
+
+
+directoryName returns the relative path of the directory that code
+pertaining to the given object specification should be placed in.
+
+> directoryName :: ObjectSpec -> FilePath
+> directoryName ( ObjectSpec name _ _ _ ) = map changeChar name
+>     where changeChar ch | ch == '/'  = pathSeparator
+>                         | otherwise  = toLower ch

@@ -7,7 +7,6 @@ This file is under the public domain.
 
 > module Main ( main ) where
 > import Rapier.Obgen.Php.Compile ( compile )
-> import Rapier.Obgen.Php.Types ( Php )
 
 Main program
 ------------
@@ -17,7 +16,4 @@ algebraic data-type representation of a PHP class and spitting out the
 corresponding PHP code.
 
 > main :: IO ()
-> main = do
->        input <- getContents
->        let spec = read input :: Php
->        putStr ( compile spec )
+> main = interact ( compile . read )

@@ -42,11 +42,13 @@ object between its PHP object format and its PHP array (key-value map)
 format.
 
 > module Rapier.Obgen.Php.GenArrayConverters
->     ( genToArray,
->       -- :: Identifier -> PhpClassStatement
->       genFromArray
->       -- :: ClassName -> [ Identifier ] -> PhpClassStatement
+>     ( genToArray   -- :: Identifier -> PhpClassStatement
+>     , genFromArray -- :: ClassName -> [ Identifier ]
+>                    -- -> PhpClassStatement
 >     ) where
+> import Rapier.Obgen.Php.Constants
+>     ( failIfNotInArrayFunction
+>     )
 > import Rapier.Obgen.Php.Types
 > import Rapier.Obgen.Php.GenComment
 > import Rapier.Obgen.Php.Utils
@@ -120,8 +122,7 @@ it!  As such, we ignore the type.)
 >     where
 >     makeCheck index =
 >         NakedExpr
->         ( FunctionCallExpr
->           "\\URY\\API\\Helpers\\fail_if_not_in_array"
+>         ( failIfNotInArrayFunction
 >           [ IdExpr "$array", StaticAccess "self" index ]
 >         )
 

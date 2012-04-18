@@ -41,24 +41,14 @@ This module provides functions and definitions relating to PHP
 namespaces, and the generation of them from Rapier class names.
 
 > module Rapier.Obgen.Php.Namespaces
->     ( rapierClassToPhpNamespace,
->       -- :: String -> Namespace
->       qualifyPhpClassName
->       -- :: ClassName -> ClassName
->     ) where
+>     ( rapierClassToPhpNamespace -- :: String -> Namespace
+>     , qualifyPhpClassName       -- :: ClassName -> ClassName
+>     )
+> where
 > import Rapier.Obgen.Php.Types
-
-
-Namespace prefix
-----------------
-
-All PHP namespaces in Rapier are prefixed by the following string.
-
-By default, it's "URY\API"; this is a throwback to the times when
-Rapier was referred to as the URY API.
-
-> namespacePrefix :: Namespace
-> namespacePrefix = "URY\\API"
+> import Rapier.Obgen.Php.Constants
+>     ( mainNamespace
+>     )
 
 
 Rapier class-names mapping to PHP namespaces
@@ -73,7 +63,7 @@ another \ (to glue the two together).
 
 > rapierClassToPhpNamespace :: String -> Namespace
 > rapierClassToPhpNamespace =
->     ((namespacePrefix ++ "\\") ++) . map replaceSlashes
+>     ( ( mainNamespace "\\" ) ++ ) . map replaceSlashes
 >         where
 >         replaceSlashes '/' = '\\'
 >         replaceSlashes x   = x
@@ -92,4 +82,4 @@ returned unmolested.
 > qualifyPhpClassName :: ClassName -> ClassName
 > qualifyPhpClassName ('\\':xs) = '\\':xs
 > qualifyPhpClassName relative =
->     '\\':namespacePrefix ++ "\\" ++ relative
+>     '\\':mainNamespace ( "\\" ++ relative )

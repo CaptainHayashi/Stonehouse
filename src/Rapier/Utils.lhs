@@ -39,14 +39,20 @@ This module contains various utility functions for Rapier that should
 probably find a good home at some point.
 
 > module Rapier.Utils
->     ( escape     -- Char -> String -> String
->     , unescape   -- Char -> String -> String
->     , safeHead   -- [ a ] -> Maybe a
->     , onHead     -- ( a -> a ) -> [ a ] -> [ a ]
+>     ( escape             -- :: Char -> String -> String
+>     , unescape           -- :: Char -> String -> String
+>     , applyAll           -- :: [ ( a -> b ) ] -> a -> [ b ]
+>     , applyAllAndFlatten -- :: [ ( a -> [ b ] ) ] -> a -> [ b ]
+>     , safeHead           -- :: [ a ] -> Maybe a
+>     , onHead             -- :: ( a -> a ) -> [ a ] -> [ a ]
 >     )
 > where
 > import Data.List
 >     ( foldl'
+>     )
+> import Control.Applicative
+>     ( ( <*> )
+>     , pure
 >     )
 
 > escape :: Char -> String -> String
@@ -65,6 +71,12 @@ probably find a good home at some point.
 >         | x == c && last current == '\\' =
 >             init current ++ [ x ]
 >         | otherwise = current ++ [ x ]
+
+
+applyAll takes a list of functions and applies them all to an input.
+
+> applyAll :: [ ( a -> b ) ] -> a -> [ b ]
+> applyAll functions = ( functions <*> ) . pure
 
 
 Safe head functions

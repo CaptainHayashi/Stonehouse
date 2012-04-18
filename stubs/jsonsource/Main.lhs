@@ -16,9 +16,4 @@ it into a format that can be used with Stonehouse's code generator
 stubs.
 
 > main :: IO ()
-> main = do
->   input <- getContents
->   putStr ( either id
->                   show
->                   ( source input )
->          )
+> main = interact ( either id show . source )

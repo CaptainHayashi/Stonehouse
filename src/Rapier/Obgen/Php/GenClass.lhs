@@ -45,6 +45,13 @@ into a PHP class.
 >       -- :: Namespace -> ClassName -> Metadata -> [ ObjectFieldDef ]
 >       --    -> [ SpecialField ] -> [ PhpStatement ]
 >     ) where
+> import Rapier.Obgen.Php.Constants
+>     ( filterToTypestringFunction
+>     , metadataClass
+>     , metadataRapierNameIndex
+>     , metadataAccessorIndex
+>     , metadataTypeIdIndex
+>     )
 > import Rapier.Obgen.Php.Types
 > import Rapier.Obgen.Php.Namespaces
 >     ( qualifyPhpClassName
@@ -76,10 +83,10 @@ into a PHP class.
 > import Rapier.Obgen.Utils
 >     ( lowerCaseInitial
 >     , enquote
->     , ( &:& )
 >     )
 > import Rapier.Utils
 >     ( escape
+>     , applyAll
 >     )
 
 
@@ -187,15 +194,13 @@ Constants part 1: make field name constants.
 > makeFieldNameConstants :: [ Identifier ] -> [ ClassStatement ]
 > makeFieldNameConstants = concatMap makeFieldNameConstant
 >     where
->     makeFieldNameConstant fname =
->         [ classLineComment
->           ( "Array index for " ++ fname ),
->           ClassField
->           ( Const
->             ( fieldKeyFor fname )
->             ( ( enquote . toPhpIndexName ) fname )
->           )
->         ]
+>     makeFieldNameConstant = applyAll [ makeComment, makeStm ]
+>     makeComment = classLineComment . ( "Array index for " ++  )
+>     makeStm fname = ClassField
+>                     ( Const
+>                       ( fieldKeyFor fname )
+>                       ( ( enquote . toPhpIndexName ) fname )
+>                     )
 
 ***
 
@@ -215,12 +220,10 @@ Part 2: FIELD_METADATA.
 > makeMetadataSubArray ( fname :- ftype ) =
 >     StaticAccess "self" ( fieldKeyFor fname ) :=>:
 >     ArrayExpr
->       [ IdExpr "RAPIER_NAME" :=>:
->         SingleQuotedString fname,
->         IdExpr "ACCESSOR" :=>:
->         SingleQuotedString ( toPhpAccessorName fname ),
->         IdExpr "TYPE_ID" :=>:
->         SingleQuotedString ( show ftype )
+>       [ metadataRapierNameIndex :=>: SingleQuotedString fname
+>       , metadataAccessorIndex :=>:
+>         SingleQuotedString ( toPhpAccessorName fname )
+>       , metadataTypeIdIndex :=>: SingleQuotedString ( show ftype )
 >       ]
 
 ***
@@ -256,7 +259,9 @@ parameters, throws an exception if anything looks shady, and returns a
 massaged version of the input otherwise.
 
 > makeConstructor :: [ ObjectFieldDef ] -> [ ClassStatement ]
-> makeConstructor = genComment &:& ( genMeth . map fieldOfDef )
+> makeConstructor = applyAll [ genComment
+>                            , ( genMeth . map fieldOfDef )
+>                            ]
 >     where
 >     genComment = ClassComment . makeConstructorComment
 >     genMeth fields = publicInstMethod "__construct" params stms
@@ -269,8 +274,7 @@ massaged version of the input otherwise.
 >             where
 >             fieldToStm ( name :- rtype ) =
 >                 fieldAccess "this" ( toPhpFieldName name ) :=
->                 FunctionCallExpr
->                 "\\URY\\API\\Helpers\\filter_to_typestring"
+>                 filterToTypestringFunction
 >                 [ IdExpr
 >                   ( '$' : toPhpParamName name ),
 >                   IdExpr
@@ -286,7 +290,7 @@ the methods that can be used to get the value of a field.
 
 > makeFieldAccessorStms :: [ ObjectFieldDef ] -> [ ClassStatement ]
 > makeFieldAccessorStms =
->     concatMap ( ( genDoc &:& genMeth ) . resolveDef )
+>     concatMap ( applyAll [ genDoc, genMeth ] . resolveDef )
 >     where
 >     genDoc ( comment, _ :- rtype ) =
 >         classDocComment ( "Gets " ++ lowerCaseInitial comment )
@@ -329,13 +333,14 @@ the function returning it is a thunk.
 >     doc = classDocComment
 >           "Returns the metadata object for this Rapier class."
 >           Nothing
->           [ DcReturn ( PObject className ) "the metadata object" ]
+>           [ DcReturn ( PObject metadataClass )
+>             "the metadata object"
+>           ]
 >     meth = publicStaticMethod "metadata" []
 >            [ Return
->              ( New className
+>              ( New metadataClass
 >                [ StaticAccess "self" "$FIELD_METADATA"
 >                , StaticAccess "self" "$SPECIAL_FIELDS"
 >                ]
 >              )
 >            ]
->     className = "\\URY\\API\\Metadata"
