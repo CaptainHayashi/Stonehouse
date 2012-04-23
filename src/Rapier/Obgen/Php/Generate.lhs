@@ -55,14 +55,14 @@ passed to the PHP compiler to create a PHP code file.
 > import Rapier.Obgen.Php.Namespaces
 >     ( rapierClassToPhpNamespace
 >     )
-> import Rapier.Obgen.Php.Types
->     ( Php ( StatementList )
+> import Language.Php.Syntax
+>     ( Php ( Php )
 >     , ClassName
 >     , Namespace
->     , Statement ( CommentStatement
->                 , NamespaceStatement
->                 , RequireOnceStatement
->                 )
+>     , TopStatement ( TopComment
+>                    , TopNamespace
+>                    , TopRequireOnce
+>                    )
 >     )
 > import Rapier.Obgen.Object
 >     ( ObjectSpec ( ObjectSpec )
@@ -88,7 +88,7 @@ class object for a PHP class implementing that specification.
 > generatePhp :: ObjectSpec -> Maybe Php
 > generatePhp ( ObjectSpec rclass metadata fields specials ) =
 >     Just
->     ( StatementList
+>     ( Php
 >       ( makePreamble ns defaultClassName metadata ++
 >         genClass ns defaultClassName metadata fields specials
 >       )
@@ -102,12 +102,13 @@ Preamble
 The preamble of a PHP Rapier class is the initial file doc comment,
 the namespace, and a set of common imports.
 
-> makePreamble :: Namespace -> ClassName -> Metadata -> [ Statement ]
+> makePreamble :: Namespace -> ClassName -> Metadata ->
+>                 [ TopStatement ]
 > makePreamble namespace classname metadata =
->     [ CommentStatement initialComment
->     , NamespaceStatement namespace
->     , RequireOnceStatement "helpers/rapier_typecheck.php"
->     , RequireOnceStatement "helpers/rapier_rtypes.php"
+>     [ TopComment initialComment
+>     , TopNamespace namespace
+>     , TopRequireOnce "helpers/rapier_typecheck.php"
+>     , TopRequireOnce "helpers/rapier_rtypes.php"
 >     ]
 >     where
 >     initialComment =

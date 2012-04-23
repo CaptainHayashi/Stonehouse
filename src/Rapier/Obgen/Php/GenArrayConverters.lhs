@@ -49,7 +49,7 @@ format.
 > import Rapier.Obgen.Php.Constants
 >     ( failIfNotInArrayFunction
 >     )
-> import Rapier.Obgen.Php.Types
+> import Language.Php.Syntax
 > import Rapier.Obgen.Php.GenComment
 > import Rapier.Obgen.Php.Utils
 >     ( toPhpAccessorName
@@ -69,7 +69,7 @@ Said code simply consists of a returning of an array mapping the
 FIELD_xyz constant keys to the results of calling the respective
 accessors.
 
-> genToArray :: [ Identifier ] -> [ ClassStatement ]
+> genToArray :: [ Identifier ] -> [ Member ]
 > genToArray = comment &:& meth
 >     where
 >     comment = ClassComment . toArrayComment
@@ -94,7 +94,7 @@ array indices associated with each field, then it sends the results to
 the constructor which does everything else.
 
 
-> genFromArray :: ClassName -> [ Identifier ] -> [ ClassStatement ]
+> genFromArray :: ClassName -> [ Identifier ] -> [ Member ]
 > genFromArray cn fnames = [ comment, meth ]
 >     where
 >     comment = ClassComment ( makeFromArrayComment cn )
@@ -117,7 +117,7 @@ constructor.  Given the amount of effort Rapier puts into filtering
 the input at the constructor level, there's no sense in duplicating
 it!  As such, we ignore the type.)
 
-> makeFromArrayChecks :: [ Identifier ] -> [ MethodStatement ]
+> makeFromArrayChecks :: [ Identifier ] -> [ Statement ]
 > makeFromArrayChecks = map makeCheck
 >     where
 >     makeCheck index =
@@ -134,7 +134,7 @@ requires the class name in addition to the field indices, so that the
 invocation of new knows which class to make.
 
 > makeFromArrayReturn :: ClassName -> [ Identifier ]
->                        -> [ MethodStatement ]
+>                        -> [ Statement ]
 > makeFromArrayReturn cn indices = [ Return ( New cn params ) ]
 >     where params = map indexToParam indices
 >           indexToParam =

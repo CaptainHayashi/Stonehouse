@@ -42,7 +42,6 @@ probably find a good home at some point.
 >     ( escape             -- :: Char -> String -> String
 >     , unescape           -- :: Char -> String -> String
 >     , applyAll           -- :: [ ( a -> b ) ] -> a -> [ b ]
->     , applyAllAndFlatten -- :: [ ( a -> [ b ] ) ] -> a -> [ b ]
 >     , safeHead           -- :: [ a ] -> Maybe a
 >     , onHead             -- :: ( a -> a ) -> [ a ] -> [ a ]
 >     )

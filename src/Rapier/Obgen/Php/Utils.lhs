@@ -58,7 +58,7 @@ that are shared between the compilation and generation phases.
 >       fieldKeyFor
 >       -- :: String -> Identifier
 >     ) where
-> import Rapier.Obgen.Php.Types
+> import Language.Php.Syntax
 > import Rapier.Obgen.ConvertName ( toCamelCase,
 >                                   toUppercaseUnderscored,
 >                                   toLowercaseConcatenated )

@@ -52,7 +52,7 @@ into a PHP class.
 >     , metadataAccessorIndex
 >     , metadataTypeIdIndex
 >     )
-> import Rapier.Obgen.Php.Types
+> import Language.Php.Syntax
 > import Rapier.Obgen.Php.Namespaces
 >     ( qualifyPhpClassName
 >     )
@@ -97,7 +97,8 @@ This is the inheritance node that is tacked on to generated PHP
 classes.
 
 > genericInheritance :: Inheritance
-> genericInheritance = Implements ( qualifyPhpClassName "Object" )
+> genericInheritance =
+>     Inheritance Nothing [ qualifyPhpClassName "Object" ]
 
 
 Class generator
@@ -111,13 +112,14 @@ about any comments attached to a field or its Rapier type, so we just
 pass in the field name (fname) to make things tidier.
 
 > genClass :: Namespace -> ClassName -> Metadata -> [ ObjectFieldDef ]
->          -> [ SpecialField ] -> [ Statement ]
+>          -> [ SpecialField ] -> [ TopStatement ]
 > genClass ns cn metadata defs sfs = [ docblock, classdef ]
 >     where
 >     docblock =
->         CommentStatement ( makeClassComment ns metadata )
->     classdef = Class cn genericInheritance stms
+>         TopComment ( makeClassComment ns metadata )
+>     classdef = Class sig stms
 >         where
+>         sig = ClassSignature Public Concrete cn genericInheritance
 >         stms = concat [ makeFieldDeclarations defs
 >                       , makeConstants sfs fields
 >                       , makeConstructor defs
@@ -139,7 +141,7 @@ statements.
 The first thing we do is make field declarations for every field in
 the object specification.
 
-> makeFieldDeclarations :: [ ObjectFieldDef ] -> [ ClassStatement ]
+> makeFieldDeclarations :: [ ObjectFieldDef ] -> [ Member ]
 > makeFieldDeclarations = concatMap makeFieldDeclaration
 >     where
 >     makeFieldDeclaration ( comment :>> field ) =
@@ -176,7 +178,7 @@ constants is as follows:
    the relevant FIELD_xyz constants.
 
 > makeConstants :: [ SpecialField ] -> [ ObjectField ]
->               -> [ ClassStatement ]
+>               -> [ Member ]
 > makeConstants aliases fields =
 >     concat [ classLineComment "ARRAY INDICES //" :
 >              makeFieldNameConstants fnames,
@@ -191,7 +193,7 @@ constants is as follows:
 
 Constants part 1: make field name constants.
 
-> makeFieldNameConstants :: [ Identifier ] -> [ ClassStatement ]
+> makeFieldNameConstants :: [ Identifier ] -> [ Member ]
 > makeFieldNameConstants = concatMap makeFieldNameConstant
 >     where
 >     makeFieldNameConstant = applyAll [ makeComment, makeStm ]
@@ -206,7 +208,7 @@ Constants part 1: make field name constants.
 
 Part 2: FIELD_METADATA.
 
-> makeFieldMetadataArray :: [ ObjectField ] -> [ ClassStatement ]
+> makeFieldMetadataArray :: [ ObjectField ] -> [ Member ]
 > makeFieldMetadataArray fields =
 >     [ ClassField
 >       ( Var Static Public "FIELD_METADATA"
@@ -220,17 +222,19 @@ Part 2: FIELD_METADATA.
 > makeMetadataSubArray ( fname :- ftype ) =
 >     StaticAccess "self" ( fieldKeyFor fname ) :=>:
 >     ArrayExpr
->       [ metadataRapierNameIndex :=>: SingleQuotedString fname
+>       [ metadataRapierNameIndex :=>:
+>         SingleQuotedString ( escape '\'' fname )
 >       , metadataAccessorIndex :=>:
 >         SingleQuotedString ( toPhpAccessorName fname )
->       , metadataTypeIdIndex :=>: SingleQuotedString ( show ftype )
+>       , metadataTypeIdIndex :=>:
+>         SingleQuotedString ( escape '\'' ( show ftype ) )
 >       ]
 
 ***
 
 Part 3: SPECIAL_FIELDS.
 
-> makeSpecialFieldsArray :: [ SpecialField ] -> [ ClassStatement ]
+> makeSpecialFieldsArray :: [ SpecialField ] -> [ Member ]
 > makeSpecialFieldsArray specials =
 >     [ ClassField
 >       ( Var Static Public "SPECIAL_FIELDS"
@@ -258,7 +262,7 @@ Most of the work of the constructor is farmed out to a pre-written PHP
 parameters, throws an exception if anything looks shady, and returns a
 massaged version of the input otherwise.
 
-> makeConstructor :: [ ObjectFieldDef ] -> [ ClassStatement ]
+> makeConstructor :: [ ObjectFieldDef ] -> [ Member ]
 > makeConstructor = applyAll [ genComment
 >                            , ( genMeth . map fieldOfDef )
 >                            ]
@@ -288,7 +292,7 @@ massaged version of the input otherwise.
 The fourth part of a class is the field accessor set, which describes
 the methods that can be used to get the value of a field.
 
-> makeFieldAccessorStms :: [ ObjectFieldDef ] -> [ ClassStatement ]
+> makeFieldAccessorStms :: [ ObjectFieldDef ] -> [ Member ]
 > makeFieldAccessorStms =
 >     concatMap ( applyAll [ genDoc, genMeth ] . resolveDef )
 >     where
@@ -327,7 +331,7 @@ reflection mechanism.
 The metadata retrieving code is the same throughout all objects, so
 the function returning it is a thunk.
 
-> metadataRetriever :: [ ClassStatement ]
+> metadataRetriever :: [ Member ]
 > metadataRetriever = [ doc, meth ]
 >     where
 >     doc = classDocComment

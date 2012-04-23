@@ -26,7 +26,7 @@ generator.
 >     , metadataTypeIdIndex        -- Expr
 >     )
 > where
-> import Rapier.Obgen.Php.Types
+> import Language.Php.Syntax
 >     ( Expr ( FunctionCallExpr
 >            , IdExpr
 >            )

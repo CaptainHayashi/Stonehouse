@@ -45,10 +45,10 @@ namespaces, and the generation of them from Rapier class names.
 >     , qualifyPhpClassName       -- :: ClassName -> ClassName
 >     )
 > where
-> import Rapier.Obgen.Php.Types
 > import Rapier.Obgen.Php.Constants
 >     ( mainNamespace
 >     )
+> import Language.Php.Syntax
 
 
 Rapier class-names mapping to PHP namespaces
@@ -63,7 +63,16 @@ another \ (to glue the two together).
 
 > rapierClassToPhpNamespace :: String -> Namespace
 > rapierClassToPhpNamespace =
->     ( ( mainNamespace "\\" ) ++ ) . map replaceSlashes
+>     spliceNamespace mainNamespace . delimStringToNamespace
+
+***
+
+The function delimStringToNamespace takes a string and a one-character
+delimiter, and chops the string up 
+
+
+
+>     ( mainNamespace :\ ) . map replaceSlashes
 >         where
 >         replaceSlashes '/' = '\\'
 >         replaceSlashes x   = x

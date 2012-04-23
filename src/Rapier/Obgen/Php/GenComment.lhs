@@ -51,7 +51,7 @@ This module provides functions to generate PHP documentation comments.
 >       makeFromArrayComment
 >       -- :: ClassName -> DocComment
 >     ) where
-> import Rapier.Obgen.Php.Types
+> import Language.Php.Syntax
 > import Rapier.Obgen.Php.Utils
 >     ( rapierTypeToPhp
 >     , toPhpParamName
