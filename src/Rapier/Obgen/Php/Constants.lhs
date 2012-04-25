@@ -30,6 +30,9 @@ generator.
 >     ( Expr ( FunctionCallExpr
 >            , IdExpr
 >            )
+>     , Namespace ( AbsoluteRoot
+>                 , ( :\ )
+>                 )
 >     )
 
 Namespaces
@@ -37,14 +40,14 @@ Namespaces
 
 mainNamespace is the main namespace of PHP Rapier.
 
-> mainNamespace :: ShowS
-> mainNamespace = ( "\\URY\\API" ++ )
+> mainNamespace :: Namespace
+> mainNamespace = AbsoluteRoot :\ "URY" :\ "API"
 
 helpersNamespace is where the set of Rapier helper functions is
 rooted.
 
-> helpersNamespace :: ShowS
-> helpersNamespace = ( "\\Helpers" ++ )
+> helpersNamespace :: Namespace -> Namespace
+> helpersNamespace = ( :\ "Helpers" )
 
 
 Class names
@@ -52,8 +55,8 @@ Class names
 
 metadataClass is the PHP class corresponding to the metadata object.
 
-> metadataClass :: String
-> metadataClass = mainNamespace "Metadata"
+> metadataClass :: ClassName
+> metadataClass = NamespacedClass mainNamespace "Metadata"
 
 
 External PHP functions

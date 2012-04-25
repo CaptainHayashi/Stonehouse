@@ -49,6 +49,12 @@ namespaces, and the generation of them from Rapier class names.
 >     ( mainNamespace
 >     )
 > import Language.Php.Syntax
+> import Data.Text
+>     ( Text
+>     , pack
+>     , split
+>     , empty
+>     )
 
 
 Rapier class-names mapping to PHP namespaces
@@ -61,21 +67,49 @@ The PHP namespace is defined as the result of prefixing the Rapier
 classname with all / replaced with \ with the namespace prefix plus
 another \ (to glue the two together).
 
-> rapierClassToPhpNamespace :: String -> Namespace
+> rapierClassToPhpNamespace :: Text -> Namespace
 > rapierClassToPhpNamespace =
->     spliceNamespace mainNamespace . delimStringToNamespace
+>     spliceNamespace mainNamespace . ( delimTextToNamespace '/' )
 
 ***
 
-The function delimStringToNamespace takes a string and a one-character
-delimiter, and chops the string up 
+The function delimTextToNamespace takes text and a one-character
+delimiter, chops the text up at that delimiter, and massages the
+resultant list into a namespace starting with the 
 
+If the string starts with the separator, the result will be an
+absolute namespace; if not, then it will be a relative namespace.
 
+> delimTextToNamespace :: Char -> Text -> Namespace
+> delimTextToNamespace = textListToNamespace `comp2` split
+>     where comp2 = (( . ) . ( . ))
 
->     ( mainNamespace :\ ) . map replaceSlashes
->         where
->         replaceSlashes '/' = '\\'
->         replaceSlashes x   = x
+> textListToNamespace :: [ Text ] -> Namespace
+> textListToNamespace lst@( x : xs )
+>     | x == empty = foldl ( :\ ) AbsoluteRoot xs
+>     | otherwise  = foldl ( :\ ) RelativeRoot lst
+
+***
+
+spliceNamespace splices one namespace onto the end of another.
+
+If the end namespace is absolute, the resultant namespace will just be
+the end namespace; if not, then it is placed into the context of the
+start namespace.
+
+> spliceNamespace :: Namespace -> Namespace -> Namespace
+> spliceNamespace start end
+>     | namespaceRoot end == AbsoluteRoot = end
+>     | otherwise = replaceRootWith end start
+
+> namespaceRoot :: Namespace -> Namespace
+> namespaceRoot ( ns :\ _ ) = namespaceRoot ns
+> namespaceRoot root = root
+
+> replaceRootWith :: Namespace -> Namespace -> Namespace
+> replaceRootWith ( AbsoluteRoot ) to = to
+> replaceRootWith ( RelativeRoot ) to = to
+> replaceRootWith ( ns :\ str ) = ( replaceRootWith ns ) :\ str
 
 
 Qualifying class names
